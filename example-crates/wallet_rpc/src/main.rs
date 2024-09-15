@@ -14,6 +14,7 @@ use std::{path::PathBuf, sync::mpsc::sync_channel, thread::spawn, time::Instant}
 use miniscript::{policy::Concrete, Descriptor};
 use std::str::FromStr;
 
+use serde_json;
 
 const DB_MAGIC: &str = "bdk-rpc-wallet-example";
 
@@ -119,6 +120,20 @@ fn main() -> anyhow::Result<()> {
             .network(args.network)
             .create_wallet(&mut db)?,
     };
+
+    println!(
+        "First derived address from the descriptor: \n{}",
+        wallet.next_unused_address(KeychainKind::External),
+    );
+
+    // BDK also has it's own `Policy` structure to represent the spending condition in a more
+    // human readable json format.
+    let spending_policy = wallet.policies(KeychainKind::External)?;
+    println!(
+        "The BDK spending policy: \n{}",
+        serde_json::to_string_pretty(&spending_policy)?
+    );
+
     println!(
         "Loaded wallet in {}s",
         start_load_wallet.elapsed().as_secs_f32()
