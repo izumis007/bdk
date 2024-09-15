@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../jade-project"
+		},
+		{
+			"path": "../bitcoin-testnet"
+		}
+	],
+	"settings": {}
+}
