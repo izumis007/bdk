@@ -10,6 +10,11 @@ use bdk_wallet::{
 use clap::{self, Parser};
 use std::{path::PathBuf, sync::mpsc::sync_channel, thread::spawn, time::Instant};
 
+// crateを追加
+use miniscript::{policy::Concrete, Descriptor};
+use std::str::FromStr;
+
+
 const DB_MAGIC: &str = "bdk-rpc-wallet-example";
 
 /// Bitcoind RPC example using `bdk_wallet::Wallet`.
@@ -20,9 +25,9 @@ const DB_MAGIC: &str = "bdk-rpc-wallet-example";
 #[clap(author, version, about, long_about = None)]
 #[clap(propagate_version = true)]
 pub struct Args {
-    /// Wallet descriptor
-    #[clap(env = "DESCRIPTOR")]
-    pub descriptor: String,
+    /// Wallet descriptor ⇨ policyに変更
+    #[clap(env = "POLICY")]
+    pub policy: String,
     /// Wallet change descriptor
     #[clap(env = "CHANGE_DESCRIPTOR")]
     pub change_descriptor: String,
@@ -79,6 +84,20 @@ enum Emission {
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
+    // Parse and compile the external policy
+    // 下のコード例を参考に
+
+    // Parse the string as a [`Concrete`] type miniscript policy.
+    //let policy = Concrete::<String>::from_str(&args.policy)?;
+    // Create a `wsh` type descriptor from the policy.
+    // `policy.compile()` returns the resulting miniscript from the policy.
+    //let descriptor = Descriptor::new_wsh(policy.compile()?)?.to_string();
+    //println!("Compiled into Descriptor: \n{}", descriptor);
+
+
+    let policy = Concrete::<String>::from_str(&args.policy)?;
+    let descriptor = Descriptor::new_wsh(policy.compile()?)?.to_string();
+
     let rpc_client = args.client()?;
     println!(
         "Connected to Bitcoin Core RPC at {:?}",
@@ -89,14 +108,14 @@ fn main() -> anyhow::Result<()> {
     let mut db =
         Store::<bdk_wallet::ChangeSet>::open_or_create_new(DB_MAGIC.as_bytes(), args.db_path)?;
     let wallet_opt = Wallet::load()
-        .descriptor(KeychainKind::External, Some(args.descriptor.clone()))
+        .descriptor(KeychainKind::External, Some(descriptor.clone()))
         .descriptor(KeychainKind::Internal, Some(args.change_descriptor.clone()))
         .extract_keys()
         .check_network(args.network)
         .load_wallet(&mut db)?;
     let mut wallet = match wallet_opt {
         Some(wallet) => wallet,
-        None => Wallet::create(args.descriptor, args.change_descriptor)
+        None => Wallet::create(descriptor, args.change_descriptor)
             .network(args.network)
             .create_wallet(&mut db)?,
     };

@@ -12,3 +12,4 @@ bdk_bitcoind_rpc = { path = "../../crates/bitcoind_rpc" }
 anyhow = "1"
 clap = { version = "3.2.25", features = ["derive", "env"] }
 ctrlc = "2.0.1"
+miniscript = { version = "12.2.0", features = ["serde", "compiler"] }
